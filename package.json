@@ -6,7 +6,7 @@
   "keywords": [
     "litellm",
     "proxy",
-    "rate-limiting"
+    "cost-control"
   ],
   "author": "ThatDogMachine",
   "license": "MIT"
