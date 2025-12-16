@@ -29,15 +29,9 @@
             #!/bin/sh
             npx @google/gemini-cli@0.9.0 --include-directories . ../litellm "$@"
           '';
-          llxpert-script = pkgs.writeShellScriptBin "llxpert-logging" ''
+          llxprt-script = pkgs.writeShellScriptBin "llxprt" ''
             #!/bin/sh
-            cd /Users/$(whoami)/repos/logging-cli
-            node ./dist/index.js --include-directories ~/repos/llxprt-code "$@"
-          '';
-          llxpert-logging-script = pkgs.writeShellScriptBin "llxpert-local" ''
-            #!/bin/sh
-            cd /Users/$(whoami)/repos/llxprt-code/packages/cli
-            node ./index.js --include-directories ~/repos/llxprt-code "$@"
+            npx @vybestack/llxprt-code@0.6.1 --include-directories . ../litellm "$@"
           '';
           
           # PostgreSQL status and management script
@@ -131,8 +125,7 @@
             echo ""
             echo "Available custom commands:"
             echo "  - gemini-ap:         Run the Gemini CLI."
-            echo "  - llxpert-logging:   Run the llxpert logging script."
-            echo "  - llxpert-local:     Run the llxpert local script."
+            echo "  - llxprt:            Run the llxprt CLI."
             echo "  - postgres-info:     Display status and info about the PostgreSQL server."
             echo "  - postgres-reset:    Deletes and resets the PostgreSQL database if it becomes corrupt."
             echo "  - dev-help:          Show this help message."
@@ -205,8 +198,7 @@
               nodejs_22
               nodePackages.prisma # prisma CLI for database migrations
               poetry
-              llxpert-logging-script
-              llxpert-script
+              llxprt-script
               postgres-status-script
               postgres-reset-script
               dev-help-script
@@ -352,7 +344,7 @@
                 fi
               fi
 
-              # --- 7. Final Setup ---
+              # --- 7. Environment ---
               export LD_LIBRARY_PATH=${lib.makeLibraryPath [stdenv.cc.cc]}
               
               echo ""
@@ -362,7 +354,7 @@
               echo ""
               echo "To start the LiteLLM Proxy Server, you can now run:"
               echo ""
-              echo 'cd $LITELLM_DIR && python litellm/proxy/proxy_cli.py --config "$WRAPPER_DIR/proxy_server_config-local-example.yaml" --host localhost --add_key "not-needed"'
+              echo 'cd $LITELLM_DIR && EXPERIMENTAL_MULTI_INSTANCE_RATE_LIMITING="True" python litellm/proxy/proxy_cli.py --config "$WRAPPER_DIR/proxy_server_config-local-example.yaml" --host localhost --add_key "not-needed"'
               echo ""
               echo ""
 
