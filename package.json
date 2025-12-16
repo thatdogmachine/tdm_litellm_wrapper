@@ -1,0 +1,13 @@
+{
+  "name": "tdm-litellm-wrapper",
+  "version": "0.0.1",
+  "description": "A wrapper for LiteLLM proxy server to provide cost control.",
+  "main": "",
+  "keywords": [
+    "litellm",
+    "proxy",
+    "rate-limiting"
+  ],
+  "author": "ThatDogMachine",
+  "license": "MIT"
+}
