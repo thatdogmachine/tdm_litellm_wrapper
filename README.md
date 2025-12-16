@@ -152,10 +152,4 @@ cd ~/repos/litellm/ui/litellm-dashboard && nix-shell -p nodejs_20 --command "cd 
 ```
 Then restart the proxy.
 
-Based on `build_ui.sh`
-
-
-curl 'http://0.0.0.0:4000/key/generate' \
---header 'Authorization: Bearer sk-1234' \
---header 'Content-Type: application/json' \
---data-raw '{"metadata": {"user": "hello@thatdogmachine.com"}}'
+(Based on `build_ui.sh`)
