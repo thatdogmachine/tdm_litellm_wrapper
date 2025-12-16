@@ -1,6 +1,6 @@
 {
   "name": "tdm-litellm-wrapper",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A wrapper for LiteLLM proxy server to provide cost control.",
   "main": "",
   "keywords": [
