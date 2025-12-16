@@ -73,7 +73,14 @@ Follow the existing docs to configure the [model-list](https://docs.litellm.ai/d
 `qwen/qwen3-coder-30b` is provided as an example of a model running on LM Studio.
 
 
-## 5) Running LiteLLM proxy
+## 5) Configuring LiteLLM location & version
+
+See `litellmVersion` and `litellmPath` in `flake.nix`.
+
+These need to be set appropriately for your needs. Specifically, the `litellmPath` assumes the LiteLLM repo is 'next to' this `tdm_litellm_wrapper` repo.
+
+
+## 6) Running LiteLLM proxy
 
 ```
 cd litellm

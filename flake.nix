@@ -12,7 +12,10 @@
       supportedSystems = [ "aarch64-darwin" ];
       forAllSystems = lib.genAttrs supportedSystems;
       nixpkgsFor = forAllSystems (system: nixpkgs.legacyPackages.${system});
-      litellmVersion = "v1.80.10.rc.2"; #"main"; # <-- CHANGE THIS to the desired litellm git tag or commit
+
+      # --- Configuration for LiteLLM ---
+      litellmVersion = "v1.80.10.rc.2"; # <-- Git tag or commit for litellm eg "main"
+      litellmPath = "../litellm"; # <-- Path to the litellm repository
     in
     {
       devShells = forAllSystems (system:
@@ -216,14 +219,14 @@
             ];
             
             LITELLM_VERSION = litellmVersion;
+            LITELLM_PATH = litellmPath;
 
             shellHook = ''
               unset SOURCE_DATE_EPOCH
               
               # --- 0. Define Paths ---
               export WRAPPER_DIR="$(pwd)"
-              export LITELLM_DIR="$(cd "$WRAPPER_DIR/../litellm" && pwd)" # Resolve to absolute path
-              
+              export LITELLM_DIR="$(cd "$LITELLM_PATH" && pwd)" # Resolve to absolute path
               # --- 1. LiteLLM Version Checkout & Tag Sync ---
               echo "--- Ensuring correct litellm version and tags ---"
               if [ -d "$LITELLM_DIR" ]; then
