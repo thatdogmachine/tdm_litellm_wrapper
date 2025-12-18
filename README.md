@@ -166,7 +166,8 @@ This is only needed if you are modifying the LiteLLM UI, otherwise can be skippe
 Run:
 
 ```
-cd ~/repos/litellm/ui/litellm-dashboard && nix-shell -p nodejs_20 --command "cd ~/repos/litellm/ui/litellm-dashboard && npm run build && \
+cd ~/repos/litellm/ui/litellm-dashboard && nix-shell -p nodejs_20 \
+    --command "cd ~/repos/litellm/ui/litellm-dashboard && npm run build && \
     destination_dir="../../litellm/proxy/_experimental/out" && \
     rm -rf "$destination_dir"/* && \
     cp -r ./out/* "$destination_dir" && \
