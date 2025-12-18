@@ -27,13 +27,14 @@
           # Define local scripts here
           gemini-script = pkgs.writeShellScriptBin "gemini-ap" ''
             #!/bin/sh
-            npx @google/gemini-cli@0.9.0 --include-directories . ../litellm "$@"
+            npx @google/gemini-cli@0.9.0 --include-directories . --include-directories ../litellm --include-directories ../llxprt-code "$@"
           '';
           llxprt-script = pkgs.writeShellScriptBin "llxprt" ''
             #!/bin/sh
-            npx @vybestack/llxprt-code@0.6.1 --include-directories . ../litellm "$@"
+            npx @vybestack/llxprt-code@0.7.0-nightly.251217.ed1785109 --include-directories . --include-directories ../litellm --include-directories ../llxprt-code --include-directories ../goose "$@"
+            # 0.7.0-nightly.251217.ed1785109 fixes many scroll issues
           '';
-          
+
           # PostgreSQL status and management script
           postgres-status-script = pkgs.writeShellScriptBin "postgres-info" ''
             #!/bin/bash
@@ -195,6 +196,7 @@
             
             packages = with pkgs;[
               gemini-script
+              google-cloud-sdk # For gcloud auth login
               nodejs_22
               nodePackages.prisma # prisma CLI for database migrations
               poetry
@@ -223,17 +225,18 @@
               echo "--- Ensuring correct litellm version and tags ---"
               if [ -d "$LITELLM_DIR" ]; then
                 (
+                  echo "--- KEEP_POSTGRES env var: if set, PostgreSQL will remain running on shell exit"
                   cd "$LITELLM_DIR"
 
                   echo "--- Cleaning up git repository state ---"
                   find .git -type f -name "*.lock" -delete
 
-                  echo "--- Fetching from remotes, avoiding problematic ref ---"
+                  echo "--- Fetching from remotes, avoiding problematic ref(s) ---"
                   git fetch origin --tags --prune
-                  
+                  # TODO: below is necessary why?
                   if git remote | grep -q "upstream"; then
                     # Fetch from upstream, but explicitly exclude the 'litellm_release_notes' branch
-                    git fetch upstream --tags --prune "refs/heads/*:refs/remotes/upstream/*" "^refs/heads/litellm_release_notes" || echo "--- WARNING: Upstream fetch failed, continuing... ---"
+                    git fetch upstream --tags --prune "refs/heads/*:refs/remotes/upstream/*" "^refs/heads/litellm_release_notes" "^refs/heads/litellm_memory_issue_on_import_11" || echo "--- WARNING: Upstream fetch failed, continuing... ---"
                   fi
 
                   echo "--- Checking out version: $LITELLM_VERSION ---"
@@ -258,7 +261,7 @@
               echo "--- Syncing Python Virtual Environment in $LITELLM_DIR ---"
               (
                 cd "$LITELLM_DIR"
-                ${pkgs.poetry}/bin/poetry install --with dev,proxy-dev --extras proxy
+                ${pkgs.poetry}/bin/poetry install --with dev,proxy-dev --extras "proxy extra_proxy caching"
               )
               echo "--- Python environment is up to date. ---"
               VENV_DIR="$LITELLM_DIR/.venv"
@@ -354,7 +357,7 @@
               echo ""
               echo "To start the LiteLLM Proxy Server, you can now run:"
               echo ""
-              echo 'cd $LITELLM_DIR && EXPERIMENTAL_MULTI_INSTANCE_RATE_LIMITING="True" python litellm/proxy/proxy_cli.py --config "$WRAPPER_DIR/proxy_server_config-local-example.yaml" --host localhost --add_key "not-needed"'
+              echo './run_proxy.sh'
               echo ""
               echo ""
 

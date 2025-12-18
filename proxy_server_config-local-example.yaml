@@ -1,5 +1,5 @@
 model_list:
-  - model_name: qwen/qwen3-coder-30b
+  - model_name: local-qwen/qwen3-coder-30b
     litellm_params:
       model: openai/qwen/qwen3-coder-30b
       api_key: "not-needed"
@@ -8,18 +8,67 @@ model_list:
       max_prompt_tokens: 260000
     model_info:
       id: "qwen3-coder-30b"
+  - model_name: local-qwen/qwen3-next-80b
+    litellm_params:
+      model: openai/qwen/qwen3-next-80b
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 260000  
+      max_prompt_tokens: 260000
+    model_info:
+      id: "qwen3-next-80b"
+  - model_name: local-openai/gpt-oss-20b
+    litellm_params:
+      model: openai/local-openai/gpt-oss-20b
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 131000  
+      max_prompt_tokens: 131000
+    model_info:
+      id: "gpt-oss-20b"
   - model_name: gemini-2.5-flash
     litellm_params:
       model: gemini/gemini-2.5-flash
-      api_key: os.environ/GOOGLE_API_KEY
+      api_key: os.environ/GEMINI_API_KEY
       context_limit: 1000000  
       max_prompt_tokens: 1000000
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro
+      api_key: os.environ/GEMINI_API_KEY
+      context_limit: 1000000  
+      max_prompt_tokens: 1000000
+  - model_name: bedrock-qwen-qwen3-next-80b-a3b
+    litellm_params:
+      model: bedrock/converse/qwen.qwen3-next-80b-a3b
+      aws_access_key_id: os.environ/aws_access_key_id
+      aws_secret_access_key: os.environ/aws_secret_access_key
+      aws_region_name: us-east-1  # Or your preferred region
+    model_info:
+      id: "qwen.qwen3-next-80b-a3b"
+  - model_name: bedrock-openai-gpt-oss-120b-1-0
+    litellm_params:
+      model: "bedrock/openai.gpt-oss-120b-1:0"
+      aws_access_key_id: os.environ/aws_access_key_id
+      aws_secret_access_key: os.environ/aws_secret_access_key
+      aws_region_name: us-east-1  # Or your preferred region
+    model_info:
+      id: "openai.gpt-oss-120b-1:0"
+
 
 litellm_settings:
   # max_budget: 0.001 # not used - may provide false sense of security
   # budget_duration: 1d
-  num_retries: 5
+  num_retries: 1
   request_timeout: 7200
+  drop_params: true # added as part of bedrock first use
+  modify_params: true # added as part of bedrock first use
+
+  cache: True
+  cache_params:
+    type: disk
+    disk_cache_dir: /tmp/litellm-cache  # OPTIONAL, default to ./.litellm_cache
+
 
 general_settings: 
   master_key: sk-1234 # [OPTIONAL] Use to enforce auth on proxy. See - https://docs.litellm.ai/docs/proxy/virtual_keys
@@ -32,3 +81,19 @@ general_settings:
   # use_shared_health_check: true
   # health_check_interval: 30
   database_url: "postgresql://postgres@localhost:5432/mylitellm" # [OPTIONAL] use for token-based auth to proxy
+
+
+
+# https://docs.litellm.ai/docs/proxy/custom_pricing
+# https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json
+# input_cost_per_token_above_200k_tokens - Cost for input tokens when context exceeds 200k tokens
+# output_cost_per_token_above_200k_tokens - Cost for output tokens when context exceeds 200k tokens
+# cache_creation_input_token_cost_above_200k_tokens - Cache creation cost for large contexts
+# cache_read_input_token_cost_above_200k_token - Cache read cost for large contexts
+# input_cost_per_image - Cost per image in multimodal requests
+# output_cost_per_reasoning_token - Cost for reasoning tokens (e.g., OpenAI o1 models)
+# input_cost_per_audio_token - Cost for audio input tokens
+# output_cost_per_audio_token - Cost for audio output tokens
+# input_cost_per_video_per_second - Cost per second of video input
+# input_cost_per_video_per_second_above_128k_tokens - Video cost for large contexts
+# input_cost_per_character

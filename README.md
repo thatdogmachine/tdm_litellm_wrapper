@@ -17,12 +17,17 @@ This deployment configuration is deliberately insecure to misuse from local host
     - It's useful to be able to target a specific commit / tag of the repo, as well as integrating / testing bespoke / local changes
 
 
+## Versioning
+
+See git tags or where they exists, Github releases.
+
+
 ## Pre-req's
 
 
-### 1) Local model endpoint(s) and loaded models
+### 1) Endpoint(s) and models
 
-Examples include:
+For local models, options include:
 
 [LM Studio](https://lmstudio.ai/) <-- used to test this config
 
@@ -75,12 +80,23 @@ Follow the existing docs to configure the [model-list](https://docs.litellm.ai/d
 
 `gemini/gemini-2.5-flash` is provided as an example of a cloud model that needs an API key, in this case `os.environ/GOOGLE_API_KEY` to be set before running litellm
 
+`bedrock/converse/qwen.qwen3-next-80b-a3b` is provided as an example of a AWS Bedrock cloud model using aws access & secret keys, in this case `os.environ/aws_access_key_id` & `os.environ/aws_secret_access_key`
+
+
+Remote models implies api keys. An example `.env` file:
+```
+# lines start with spaces because zsh will omit those from history if pasted
+ export aws_access_key_id=<your-key>
+ export aws_secret_access_key=<your-key>
+ export GEMINI_API_KEY=<your-key>
+```
+
 
 ### 5) Configuring Budgets / Usage reporting
 
 The UI for this requires `master_key` be set. This example uses the example [master_key](https://docs.litellm.ai/docs/proxy/config_settings#:~:text=Doc%20Secret%20Managers-,master_key,-string) supplied in LiteLLM docs & examples.
 
-This key needs to be passed my your Agent / Client. An example for gemini-cli / llxprt-code is provided later in this doc.
+This key needs to be passed by your Agent / Client. An example for gemini-cli / llxprt-code is provided later in this doc.
 
 
 ### 6) Configuring LiteLLM location & version
@@ -93,14 +109,17 @@ These need to be set appropriately for your needs. Specifically, the `litellmPat
 ## Running LiteLLM proxy
 
 ```
-export GOOGLE_API_KEY=<your-key>
-export <other-keys-based-on-your-models>=<the-key>
-cd litellm
-
 nix develop --fallback
 ```
 
-Review briefly the output in the shell, then follow the instructions to `Start the LiteLLM Proxy Server` - noting the config file may be different from what you chose in 4)
+Review briefly the output in the shell, then:
+
+```
+./run_proxy.sh
+```
+
+Remember: the config file may be different from what you chose in 4) - if so, adapt the script accordingly.
+
 
 ## Configuring your team / user via UI
 
@@ -110,8 +129,9 @@ The `master_key` may not interact with cost control how you expect, so to mitiga
     - Remember to set a max budget
     - Set that budget really low until you satisfy yourself it will block requests
 - Create a user: http://localhost:4000/ui/?login=success&page=users
+    - Remember to add the user to the team created previously to inherit the budget constraint
 - Create a Virtual Key: http://localhost:4000/ui/?login=success&page=api-keys
-    - Make sure you are logged in as the `admin` user or you won't see the necessary options
+    - Make sure you are logged in as the `admin` user or you may not see the necessary options
 
 
 ## Configuring your Agent / Client
@@ -141,6 +161,8 @@ Notice: you'll need to specify an auth-key matching what you configured previosu
 
 ## Rebuilding the UI
 
+This is only needed if you are modifying the LiteLLM UI, otherwise can be skipped
+
 Run:
 
 ```
@@ -153,3 +175,12 @@ cd ~/repos/litellm/ui/litellm-dashboard && nix-shell -p nodejs_20 --command "cd 
 Then restart the proxy.
 
 (Based on `build_ui.sh`)
+
+
+## upstream changes not yet confirmed or submitted
+
+If functionality doesn't work on a fresh clone of litellm, below may need to be applied.
+
+These are not yet confirmed to be necessary.
+
+boto3 = {version = "1.41.3", optional = true}
