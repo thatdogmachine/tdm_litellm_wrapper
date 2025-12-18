@@ -28,13 +28,22 @@ model_list:
       id: "qwen3-next-80b"
   - model_name: local-openai/gpt-oss-20b
     litellm_params:
-      model: openai/local-openai/gpt-oss-20b
+      model: openai/openai/gpt-oss-20b
       api_key: "not-needed"
       api_base: http://localhost:1234/v1
       context_limit: 131000  
       max_prompt_tokens: 131000
     model_info:
       id: "gpt-oss-20b"
+  - model_name: local-openai/gpt-oss-120b
+    litellm_params:
+      model: openai/openai/gpt-oss-120b
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 131000  
+      max_prompt_tokens: 131000
+    model_info:
+      id: "gpt-oss-120b"
   - model_name: gemini-2.5-flash
     litellm_params:
       model: gemini/gemini-2.5-flash
