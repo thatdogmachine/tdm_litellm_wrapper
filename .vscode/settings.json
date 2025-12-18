@@ -1,5 +1,26 @@
 {
     "cSpell.words": [
-        "litellm"
+        "createdb",
+        "datistemplate",
+        "datname",
+        "dropdb",
+        "elif",
+        "exitkeep",
+        "initdb",
+        "isready",
+        "litellm",
+        "llxprt",
+        "LOGFILE",
+        "mylitellm",
+        "nixos",
+        "nixpkgs",
+        "PGDATA",
+        "pkgs",
+        "pkill",
+        "psql",
+        "stdenv",
+        "VENV",
+        "VIRTUALENVS",
+        "vybestack"
     ]
 }
