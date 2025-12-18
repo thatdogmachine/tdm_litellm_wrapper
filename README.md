@@ -109,7 +109,7 @@ These need to be set appropriately for your needs. Specifically, the `litellmPat
 ## Running LiteLLM proxy
 
 ```
-nix develop --fallback
+./run_nix.sh
 ```
 
 Review briefly the output in the shell, then:
