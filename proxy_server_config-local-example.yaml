@@ -1,4 +1,13 @@
 model_list:
+  - model_name: local-glm-4-5-air-mlx
+    litellm_params:
+      model: openai/glm-4.5-air-mlx
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 260000  
+      max_prompt_tokens: 260000
+    model_info:
+      id: "glm-4.5-air-mlx"
   - model_name: local-qwen/qwen3-coder-30b
     litellm_params:
       model: openai/qwen/qwen3-coder-30b
