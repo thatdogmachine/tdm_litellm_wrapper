@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create IAM user with Bedrock-only permissions and budget monitoring (us-east-1 only)'
+
+Parameters:
+  BudgetAmount:
+    Type: Number
+    Description: 'Budget amount in USD (e.g., 100.00)'
+    Default: 10.00
+    MinValue: 1.00
+    
+  BudgetThreshold:
+    Type: Number
+    Description: 'Threshold percentage for budget alerts (e.g., 80 for 80%)'
+    Default: 80
+    MinValue: 1
+    MaxValue: 100
+    
+  NotificationEmails:
+    Type: CommaDelimitedList
+    Description: 'Comma-separated list of email addresses for budget notifications'
+    Default: 'user@example.com'
+
+Resources:
+  BedrockUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: bedrock-only-user
+      Path: /
+      Policies:
+        - PolicyName: BedrockOnlyPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Allow basic Bedrock model operations
+              - Sid: AllowBedrockModelAccess
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                  - bedrock:ListFoundationModels
+                  - bedrock:GetFoundationModel
+                Resource: '*'
+              
+              # Allow AWS Marketplace actions for model access
+              - Sid: AllowMarketplaceModelAccess
+                Effect: Allow
+                Action:
+                  - aws-marketplace:ViewSubscriptions
+                  - aws-marketplace:Subscribe
+                Resource: '*'
+              
+              # Allow basic IAM actions for the user to function
+              - Sid: AllowBasicIAMActions
+                Effect: Allow
+                Action:
+                  - iam:GetUser
+                  - iam:ChangePassword
+                  - iam:GetAccountPasswordPolicy
+                Resource: '*'
+
+  BedrockUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref BedrockUser
+
+  BedrockBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${AWS::StackName}-bedrock-budget'
+        BudgetLimit:
+          Amount: !Ref BudgetAmount
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          Service:
+            - Amazon Bedrock
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: !Ref BudgetThreshold
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Select [0, !Ref NotificationEmails]
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: !Ref BudgetThreshold
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Select [0, !Ref NotificationEmails]
+
+Outputs:
+  UserName:
+    Description: 'IAM User Name'
+    Value: !Ref BedrockUser
+    
+  AccessKeyId:
+    Description: 'Access Key ID for the IAM User'
+    Value: !Ref BedrockUserAccessKey
+    
+  SecretAccessKey:
+    Description: 'Secret Access Key for the IAM User'
+    Value: !GetAtt BedrockUserAccessKey.SecretAccessKey
+    
+  BudgetName:
+    Description: 'Name of the created budget'
+    Value: !Ref BedrockBudget
+    
+  BudgetAmount:
+    Description: 'Budget amount in USD'
+    Value: !Sub '${BudgetAmount} USD'
+    
+  NotificationThreshold:
+    Description: 'Notification threshold percentage'
+    Value: !Sub '${BudgetThreshold}%'
