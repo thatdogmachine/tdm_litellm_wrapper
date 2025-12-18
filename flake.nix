@@ -48,6 +48,16 @@
             echo "----------------------------------------------------------------"
           '';
 
+          gemini-script = pkgs.writeShellScriptBin "gemini-ap" ''
+            #!/bin/sh
+            npx @google/gemini-cli@0.9.0                              --include-directories . --include-directories ../litellm --include-directories ../llxprt-code --include-directories ../goose "$@"
+          '';
+          llxprt-script = pkgs.writeShellScriptBin "llxprt" ''
+            #!/bin/sh
+            npx @vybestack/llxprt-code@0.7.0-nightly.251217.ed1785109 --include-directories . --include-directories ../litellm --include-directories ../llxprt-code --include-directories ../goose "$@"
+            # 0.7.0-nightly.251217.ed1785109 fixes many scroll issues
+          '';
+
           postgres-logs-script = pkgs.writeShellScriptBin "postgres-logs" ''
             tail -f "$PGDATA/postgres.log"
           '';
@@ -72,9 +82,16 @@
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
-              google-cloud-sdk nodejs_22 nodePackages.prisma
-              poetry postgres-status-script postgres-reset-script
-              postgres-logs-script dev-help-script zsh postgresql
+              google-cloud-sdk nodejs_22
+              nodePackages.prisma
+              poetry postgres-status-script
+              postgres-reset-script
+              postgres-logs-script
+              dev-help-script
+              gemini-script
+              llxprt-script
+              zsh
+              postgresql
             ];
 
             LITELLM_TARGET_VERSION = litellmVer;

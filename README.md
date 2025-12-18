@@ -6,6 +6,8 @@ Convenience wrapper for [LiteLLM](https://docs.litellm.ai/) project, using [Nix]
 ## Important
 
 This deployment configuration is deliberately insecure to misuse from local host. Understand those risks before using.
+ In particular, ensure you understand how Authorization, not just Authentication, works for
+ [passthrough](https://docs.litellm.ai/docs/pass_through/intro) endpoints.
 
 
 ## Motivations
