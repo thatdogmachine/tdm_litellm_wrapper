@@ -12,7 +12,7 @@
       forAllSystems = lib.genAttrs supportedSystems;
       nixpkgsFor = forAllSystems (system: nixpkgs.legacyPackages.${system});
 
-      litellmVer = "v1.80.10.rc.4";
+      litellmVer = "v1.80.10.rc.3";
       litellmRelPath = "../litellm";
     in
     {
@@ -36,7 +36,7 @@
             echo "  postgres-logs   : Tail database logs"
             echo ""
             echo "LiteLLM Proxy:"
-            echo "  To start the server, run: ./run_proxy.sh"
+            echo "  To start the server, run: ./rp.sh"
             echo ""
             echo "Python Environment:"
             if [ -d "$LITELLM_DIR" ]; then
