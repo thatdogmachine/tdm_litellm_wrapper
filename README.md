@@ -111,13 +111,13 @@ These need to be set appropriately for your needs. Specifically, the `litellmPat
 ## Running LiteLLM proxy
 
 ```
-./run_nix.sh
+./rn.sh
 ```
 
 Review briefly the output in the shell, then:
 
 ```
-./run_proxy.sh
+./rp.sh
 ```
 
 Remember: the config file may be different from what you chose in 4) - if so, adapt the script accordingly.
