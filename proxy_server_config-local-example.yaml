@@ -44,6 +44,12 @@ model_list:
       max_prompt_tokens: 131000
     model_info:
       id: "gpt-oss-120b"
+  - model_name: GCP-gemma-3-27b
+    litellm_params:
+      model: gemini/gemma-3-27b
+      api_key: os.environ/GEMINI_API_KEY
+      context_limit: 1000000  
+      max_prompt_tokens: 1000000
   - model_name: gemini-2.5-flash
     litellm_params:
       model: gemini/gemini-2.5-flash
@@ -63,7 +69,7 @@ model_list:
       aws_secret_access_key: os.environ/aws_secret_access_key
       aws_region_name: us-east-1  # Or your preferred region
     model_info:
-      id: "qwen.qwen3-next-80b-a3b"
+      id: "bedrock/converse/qwen.qwen3-next-80b-a3b"
   - model_name: bedrock-openai-gpt-oss-120b-1-0
     litellm_params:
       model: "bedrock/openai.gpt-oss-120b-1:0"
@@ -71,10 +77,12 @@ model_list:
       aws_secret_access_key: os.environ/aws_secret_access_key
       aws_region_name: us-east-1  # Or your preferred region
     model_info:
-      id: "openai.gpt-oss-120b-1:0"
+      id: "bedrock/openai.gpt-oss-120b-1:0"
 
 
 litellm_settings:
+  timeout: 7200
+  stream_timeout: 7200
   # max_budget: 0.001 # not used - may provide false sense of security
   # budget_duration: 1d
   num_retries: 1
