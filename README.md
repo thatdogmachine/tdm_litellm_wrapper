@@ -21,7 +21,7 @@ This deployment configuration is deliberately insecure to misuse from local host
 
 ## Versioning
 
-See git tags or where they exists, Github releases.
+See git tags or where they exist, Github releases. HEAD of main doesn't have automated tests, and is the development branch.
 
 
 ## Pre-req's
