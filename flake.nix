@@ -12,7 +12,7 @@
       forAllSystems = lib.genAttrs supportedSystems;
       nixpkgsFor = forAllSystems (system: nixpkgs.legacyPackages.${system});
 
-      litellmVer = "v1.80.10.rc.3";
+      litellmVer = "v1.80.10.rc.2";
       litellmRelPath = "../litellm";
     in
     {
@@ -28,15 +28,19 @@
             echo "  dev-help        : Show this menu"
             echo "  gemini-ap       : Run Gemini CLI"
             echo "  llxprt          : Run llxprt CLI"
-            echo "  exitkeep        : Exit shell but leave Postgres running"
+            echo "  exitkeep        : Exit shell but leave Postgres and Redis running"
             echo ""
             echo "PostgreSQL:"
             echo "  postgres-info   : Status and connection info"
             echo "  postgres-reset  : Factory reset the database"
             echo "  postgres-logs   : Tail database logs"
             echo ""
+            echo "Redis:"
+            echo "  redis-info      : Status and connection info (not yet implemented)"
+            echo "  redis-logs      : Tail Redis logs (not yet implemented)"
+            echo ""
             echo "LiteLLM Proxy:"
-            echo "  To start the server, run: ./rp.sh"
+            echo "  To start the server, run: ./run_proxy.sh"
             echo ""
             echo "Python Environment:"
             if [ -d "$LITELLM_DIR" ]; then
@@ -46,20 +50,6 @@
               echo "  Location: $LITELLM_DIR"
             fi
             echo "----------------------------------------------------------------"
-          '';
-
-          gemini-script = pkgs.writeShellScriptBin "gemini" ''
-            #!/bin/sh
-            npx @google/gemini-cli@0.22.2                              --include-directories . --include-directories ../litellm "$@"
-          '';
-          gemini-script-ap = pkgs.writeShellScriptBin "gemini-ap" ''
-            #!/bin/sh
-            npx @google/gemini-cli@0.9.0                              --include-directories . --include-directories ../litellm --include-directories ../llxprt-code --include-directories ../goose "$@"
-          '';
-          llxprt-script = pkgs.writeShellScriptBin "llxprt" ''
-            #!/bin/sh
-            npx @vybestack/llxprt-code@0.7.0-nightly.251217.ed1785109 --include-directories . --include-directories ../litellm --include-directories ../llxprt-code --include-directories ../goose "$@"
-            # 0.7.0-nightly.251217.ed1785109 fixes many scroll issues
           '';
 
           postgres-logs-script = pkgs.writeShellScriptBin "postgres-logs" ''
@@ -86,17 +76,10 @@
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
-              google-cloud-sdk nodejs_22
-              nodePackages.prisma
-              poetry postgres-status-script
-              postgres-reset-script
-              postgres-logs-script
-              dev-help-script
-              gemini-script
-              gemini-script-ap
-              llxprt-script
-              zsh
-              postgresql
+              google-cloud-sdk nodejs_22 nodePackages.prisma
+              poetry postgres-status-script postgres-reset-script
+              postgres-logs-script dev-help-script zsh postgresql
+              redis # Add redis to packages
             ];
 
             LITELLM_TARGET_VERSION = litellmVer;
@@ -105,6 +88,7 @@
               export WRAPPER_DIR="$PWD"
               export LITELLM_DIR="$(cd "${litellmRelPath}" && pwd)"
               export PGDATA="$WRAPPER_DIR/postgresql/data"
+              export REDIS_DIR="$WRAPPER_DIR/redis/data" # Define REDIS_DIR
 
               # 1. Resolve ZSH path
               DETECTED_ZSH=$(zsh -i -c 'echo $ZSH' 2>/dev/null | head -n 1)
@@ -136,7 +120,23 @@
               if ! ${pkgs.postgresql}/bin/pg_ctl -D "$PGDATA" status > /dev/null 2>&1; then
                 echo "--- Starting PostgreSQL server ---"
                 ${pkgs.postgresql}/bin/pg_ctl -D "$PGDATA" -l "$PGDATA/postgres.log" start >/dev/null
+                echo "--- PostgreSQL server started. ---"
                 ${pkgs.postgresql}/bin/createdb -U postgres mylitellm 2>/dev/null || true
+              else
+                echo "--- PostgreSQL server already running. ---"
+              fi
+
+              # 5. Redis Setup
+              if [ ! -d "$REDIS_DIR" ]; then
+                echo "--- Initializing Redis data directory ---"
+                mkdir -p "$REDIS_DIR"
+              fi
+              if ! ${pkgs.redis}/bin/redis-cli ping >/dev/null 2>&1; then
+                echo "--- Starting Redis server ---"
+                ${pkgs.redis}/bin/redis-server "$REDIS_DIR/redis.conf" >/dev/null 2>&1 # Daemonize redis
+                echo "--- Redis server started. ---"
+              else
+                echo "--- Redis server already running. ---"
               fi
 
               # 5. Shell Handoff
@@ -170,7 +170,7 @@ export PROMPT="%F{cyan}[litellm]%f \$PROMPT"
 STOP_ON_EXIT=true
 exitkeep() { 
   STOP_ON_EXIT=false
-  echo -e "\033[1;32m✔ Postgres remains running.\033[0m"
+  echo -e "\033[1;32m✔ Postgres and Redis remain running.\033[0m"
   builtin exit
 }
 
@@ -178,6 +178,11 @@ cleanup() {
   if [ "\$STOP_ON_EXIT" = true ]; then 
     echo -e "\n\033[1;33m--- Stopping PostgreSQL server ---\033[0m"
     ${pkgs.postgresql}/bin/pg_ctl -D "\$PGDATA" stop > /dev/null 2>&1
+    echo "--- PostgreSQL server stopped. ---"
+
+    echo -e "\n\033[1;33m--- Stopping Redis server ---\033[0m"
+    ${pkgs.redis}/bin/redis-cli shutdown >/dev/null 2>&1
+    echo "--- Redis server stopped. ---"
   fi
   rm -rf "$ZDIR"
 }
