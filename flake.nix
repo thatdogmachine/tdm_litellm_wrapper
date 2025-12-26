@@ -48,7 +48,11 @@
             echo "----------------------------------------------------------------"
           '';
 
-          gemini-script = pkgs.writeShellScriptBin "gemini-ap" ''
+          gemini-script = pkgs.writeShellScriptBin "gemini" ''
+            #!/bin/sh
+            npx @google/gemini-cli@0.22.2                              --include-directories . --include-directories ../litellm "$@"
+          '';
+          gemini-script-ap = pkgs.writeShellScriptBin "gemini-ap" ''
             #!/bin/sh
             npx @google/gemini-cli@0.9.0                              --include-directories . --include-directories ../litellm --include-directories ../llxprt-code --include-directories ../goose "$@"
           '';
@@ -89,6 +93,7 @@
               postgres-logs-script
               dev-help-script
               gemini-script
+              gemini-script-ap
               llxprt-script
               zsh
               postgresql
