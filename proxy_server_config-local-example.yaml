@@ -1,4 +1,14 @@
 model_list:
+  - model_name: openai/glm-4-5-air-mlx # letta server bug?
+    litellm_params:
+      model: openai/glm-4.5-air-mlx
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 260000  
+      max_prompt_tokens: 260000
+      custom_llm_provider: openai
+    model_info:
+      id: "glm-4.5-air-mlx"
   - model_name: local-glm-4-5-air-mlx
     litellm_params:
       model: openai/glm-4.5-air-mlx
@@ -78,6 +88,25 @@ model_list:
       aws_region_name: us-east-1  # Or your preferred region
     model_info:
       id: "bedrock/openai.gpt-oss-120b-1:0"
+  - model_name: bedrock/amazon.titan-embed-text-v1 # New Bedrock embedding model
+    litellm_params:
+      model: "bedrock/amazon.titan-embed-text-v1" # Full LiteLLM Bedrock model name
+      aws_access_key_id: os.environ/aws_access_key_id
+      aws_secret_access_key: os.environ/aws_secret_access_key
+      aws_region_name: us-east-1
+    model_info:
+      id: "amazon.titan-embed-text-v1"
+  - model_name: openai/local-Nomic-ai/nomic-embed-text-v1-5
+    litellm_params:
+      model: openai/nomic-embed-text-v1.5
+      api_key: "sk-litellm-dummy" # dummy key for local endpoint
+      api_base: http://localhost:1234/v1
+      custom_llm_provider: openai # Explicitly set provider to avoid Bedrock confusion
+  - model_name: local-bge-small-en-v1-5
+    litellm_params:
+      model: openai/bge-small-en-v1.5
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
 
 
 litellm_settings:
@@ -92,11 +121,20 @@ litellm_settings:
 
   cache: True
   cache_params:
-    type: disk
-    disk_cache_dir: /tmp/litellm-cache  # OPTIONAL, default to ./.litellm_cache
-
-
-general_settings: 
+    type: "redis-semantic"
+    similarity_threshold: 0.8
+    redis_semantic_cache_embedding_model: bedrock/amazon.titan-embed-text-v1 # use the Bedrock embedding model for semantic cache
+    # NOTE: redis_semantic_cache_embedding_model doesn't seem used, but is needed to start the cache
+    ttl: 300 # Extend cache lifetime to 5 minutes
+    # NOTE: if using agents, this may not be hit regardless
+    skip_system_message_in_cache_key: True # More consistent cache keys
+  
+general_settings:
+  ui_features:
+    analytics_dashboard: true
+    log_requests: true
+  store_model_in_db: true
+  store_prompts_in_spend_logs: true # NOTE: PII consideration
   master_key: sk-1234 # [OPTIONAL] Use to enforce auth on proxy. See - https://docs.litellm.ai/docs/proxy/virtual_keys
   store_model_in_db: True
   proxy_budget_rescheduler_min_time: 30

@@ -8,7 +8,7 @@
   outputs = { self, nixpkgs, ... }:
     let
       lib = nixpkgs.lib;
-      supportedSystems = [ "aarch64-darwin" "x86_64-darwin" "aarch64-linux" "x86_64-linux" ];
+      supportedSystems = [ "aarch64-darwin" ]; # inc: hardcoded container cli usage
       forAllSystems = lib.genAttrs supportedSystems;
       nixpkgsFor = forAllSystems (system: nixpkgs.legacyPackages.${system});
 
@@ -40,7 +40,7 @@
             echo "  redis-logs      : Tail Redis logs (not yet implemented)"
             echo ""
             echo "LiteLLM Proxy:"
-            echo "  To start the server, run: ./run_proxy.sh"
+            echo "  To start the server, run: ./rp.sh"
             echo ""
             echo "Python Environment:"
             if [ -d "$LITELLM_DIR" ]; then
@@ -72,19 +72,26 @@
             fi
           '';
 
+          llxprt-script = pkgs.writeShellScriptBin "llxprt" ''
+            #!/bin/sh
+            npx @vybestack/llxprt-code@0.7.0-nightly.251217.ed1785109 "$@"
+            # 0.7.0-nightly.251217.ed1785109 fixes many scroll issues
+          '';
         in
         {
-          default = pkgs.mkShell {
+          default = pkgs.mkShellNoCC {
             packages = with pkgs; [
               google-cloud-sdk nodejs_22 nodePackages.prisma
+              llxprt-script
               poetry postgres-status-script postgres-reset-script
               postgres-logs-script dev-help-script zsh postgresql
-              redis # Add redis to packages
+              pkgs.redis
             ];
 
             LITELLM_TARGET_VERSION = litellmVer;
 
             shellHook = ''
+              set -e
               export WRAPPER_DIR="$PWD"
               export LITELLM_DIR="$(cd "${litellmRelPath}" && pwd)"
               export PGDATA="$WRAPPER_DIR/postgresql/data"
@@ -98,8 +105,8 @@
 
               # 2. Sync LiteLLM
               if [ -d "$LITELLM_DIR" ]; then
-                echo "--- Updating LiteLLM to $LITELLM_TARGET_VERSION ---"
-                (cd "$LITELLM_DIR" && git checkout "$LITELLM_TARGET_VERSION" 2>/dev/null)
+                echo "--- Attempting to update LiteLLM to $LITELLM_TARGET_VERSION ---"
+                cd "$LITELLM_DIR" && git checkout "$LITELLM_TARGET_VERSION"
               fi
 
               # 3. Sync Python & Prisma
@@ -126,18 +133,42 @@
                 echo "--- PostgreSQL server already running. ---"
               fi
 
-              # 5. Redis Setup
-              if [ ! -d "$REDIS_DIR" ]; then
-                echo "--- Initializing Redis data directory ---"
-                mkdir -p "$REDIS_DIR"
-              fi
-              if ! ${pkgs.redis}/bin/redis-cli ping >/dev/null 2>&1; then
-                echo "--- Starting Redis server ---"
-                ${pkgs.redis}/bin/redis-server "$REDIS_DIR/redis.conf" >/dev/null 2>&1 # Daemonize redis
-                echo "--- Redis server started. ---"
+              # Redis 8 Stack Setup
+              echo "--- Checking Redis Stack Status ---"
+              
+              if command -v container &> /dev/null; then
+                  container system start # TODO: better error handling
+                  # Capture the inspect output
+                  STATUS=$(container inspect litellm-redis 2>/dev/null)
+                  echo "\STATUS: $STATUS"
+                  # Explicitly check for "[]" which means "Not Found"
+                  if [ "$STATUS" = "[]" ] || [ -z "$STATUS" ]; then
+                      echo "--- Starting Redis Stack Container (Search/JSON enabled) ---"
+                      container run -d --name litellm-redis -p 6379:6379 redis/redis-stack-server:latest
+                  else
+                      echo "--- Redis Container is already running ---"
+                  fi
               else
-                echo "--- Redis server already running. ---"
+                  echo -e "\033[1;31mWarning: 'container' tool not found. Redis may not be running!\033[0m"
+                  echo -e "   Manual install dependency on:"
+                  echo -e "   https://github.com/apple/container"
+                  exit 1
               fi
+
+              # 4. Connection Health Check
+              echo -n "Waiting for Redis connection..."
+              MAX_RETRIES=10
+              COUNT=0
+              until redis-cli -p 6379 ping >/dev/null 2>&1; do
+                 sleep 1
+                 echo -n "."
+                 COUNT=$((COUNT+1))
+                 if [ $COUNT -ge $MAX_RETRIES ]; then
+                    echo -e "\n\033[1;31mFailed to connect to Redis. Is the container running?\033[0m"
+                    break
+                 fi
+              done
+              echo " Connected to Redis!"
 
               # 5. Shell Handoff
               if [ -z "$IN_LITELLM_ZSH" ]; then
@@ -180,9 +211,11 @@ cleanup() {
     ${pkgs.postgresql}/bin/pg_ctl -D "\$PGDATA" stop > /dev/null 2>&1
     echo "--- PostgreSQL server stopped. ---"
 
-    echo -e "\n\033[1;33m--- Stopping Redis server ---\033[0m"
-    ${pkgs.redis}/bin/redis-cli shutdown >/dev/null 2>&1
-    echo "--- Redis server stopped. ---"
+    set -e
+    echo -e "\n\033[1;33m--- Stopping Redis Stack container ---\033[0m"
+    container stop "litellm-redis" >/dev/null 2>&1
+    container rm "litellm-redis" >/dev/null 2>&1
+    echo "--- Redis Stack container stopped and removed. ---"
   fi
   rm -rf "$ZDIR"
 }
@@ -191,6 +224,7 @@ trap cleanup EXIT
 dev-help
 EOF
                 export ZDOTDIR="$ZDIR"
+                cd $WRAPPER_DIR
                 exec ${pkgs.zsh}/bin/zsh -i
               fi
             '';
