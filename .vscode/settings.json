@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "boto",
         "createdb",
         "datistemplate",
         "datname",
@@ -17,11 +18,13 @@
         "mylitellm",
         "nixos",
         "nixpkgs",
+        "Ollama",
         "PGDATA",
         "pkgs",
         "pkill",
         "psql",
         "qdrant",
+        "qwen",
         "readlink",
         "stdenv",
         "VENV",
