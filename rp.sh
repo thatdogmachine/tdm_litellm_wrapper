@@ -12,4 +12,6 @@ source ./.env
 cd $LITELLM_DIR && \
     EXPERIMENTAL_MULTI_INSTANCE_RATE_LIMITING="True" poetry run litellm \
         --config "$WRAPPER_DIR/proxy_server_config-local-example.yaml" \
-        --host localhost
+        --host 0.0.0.0
+        
+#localhost

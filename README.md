@@ -5,7 +5,8 @@ Convenience wrapper for [LiteLLM](https://docs.litellm.ai/) project, using [Nix]
 
 ## Important
 
-This deployment configuration is deliberately insecure to misuse from local host. Understand those risks before using.
+This deployment configuration is deliberately INSECURE to misuse from your local network (Proxy reachable with default keys)
+ and local host (eg Postgres, Redis unsecured). Understand those risks before using.
  In particular, ensure you understand how Authorization, not just Authentication, works for
  [passthrough](https://docs.litellm.ai/docs/pass_through/intro) endpoints.
 
@@ -140,7 +141,7 @@ The `master_key` may not interact with cost control how you expect, so to mitiga
 
 Example `profile` configuration for `gemini-cli` and `llxprt-code`
 
-Notice: you'll need to specify an auth-key matching what you configured previosuly in LiteLLM
+Notice: you'll need to specify an auth-key matching what you configured previously in LiteLLM
 
 ```
 {
