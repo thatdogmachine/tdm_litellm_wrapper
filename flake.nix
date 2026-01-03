@@ -20,6 +20,99 @@
         let
           pkgs = nixpkgsFor.${system};
 
+          db-backup-script = pkgs.writeShellScriptBin "db-backup" ''
+            #!/usr/bin/env bash
+            # Usage: db-backup [database_name]
+            # If database_name is provided, backs up only that database.
+            # If database_name is omitted, backs up ALL non-template databases.
+
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+            if [ -n "$1" ]; then
+                DATABASES="$1"
+            else
+                # Fetch all databases except templates using unaligned output (-A) and tuples only (-t)
+                DATABASES=$(psql -U postgres -A -t -c "SELECT datname FROM pg_database WHERE datistemplate = false;")
+            fi
+
+            printf "\033[1;34m=== PostgreSQL Backup ===\033[0m\n"
+
+            FAILURES=0
+            for DB in $DATABASES; do
+                BACKUP_FILE="./''${DB}-''${TIMESTAMP}.sql"
+                printf "Backing up database '\033[1;33m%s\033[0m' to '%s'...\n" "$DB" "$BACKUP_FILE"
+
+                # Use pg_dump to create a plain SQL backup.
+                pg_dump -U postgres -F p "$DB" > "$BACKUP_FILE"
+
+                if [ $? -eq 0 ]; then
+                  printf "\033[1;32m✔ Backup successful: %s\033[0m\n" "$BACKUP_FILE"
+                else
+                  printf "\033[1;31m❌ Backup failed for: %s\033[0m\n" "$DB"
+                  FAILURES=1
+                fi
+            done
+
+            if [ "$FAILURES" -ne 0 ]; then
+              exit 1
+            fi
+          '';
+
+          db-restore-script = pkgs.writeShellScriptBin "db-restore" ''
+            #!/usr/bin/env bash
+            # Usage: db-restore <backup_file_path> [target_database_name]
+            # If target_database_name is omitted, it attempts to infer it from the backup file name,
+            # or defaults to 'mylitellm'.
+
+            BACKUP_FILE="$1"
+            if [ -z "$BACKUP_FILE" ]; then
+              echo -e "\033[1;31m❌ Error: Backup file path is required.\033[0m"
+              echo "Usage: db-restore <backup_file_path> [target_database_name]"
+              exit 1
+            fi
+
+            # Attempt to infer DB name from common backup file naming convention
+            # e.g., mylitellm-20231027_103000.sql -> mylitellm
+            INFERRED_DB_NAME=$(basename "$BACKUP_FILE" | sed -E 's/-[0-9]{8}_[0-9]{6}\.sql$//; s/\.sql$//')
+            TARGET_DB_NAME=''${2:-''${INFERRED_DB_NAME:-mylitellm}}
+
+            echo -e "\033[1;34m=== PostgreSQL Restore ===\033[0m"
+            echo "Backup File: $BACKUP_FILE"
+            echo "Target Database: $TARGET_DB_NAME"
+
+            read -p "This will drop and recreate the database '$TARGET_DB_NAME'. Are you sure? [y/N] " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+              echo "Restore cancelled."
+              exit 0
+            fi
+
+            echo "Dropping and recreating database '$TARGET_DB_NAME'..."
+            # Use psql to drop and create the database.
+            psql -U postgres -c "DROP DATABASE IF EXISTS \"$TARGET_DB_NAME\";"
+            if [ $? -ne 0 ]; then
+              echo -e "\033[1;31m❌ Failed to drop database '$TARGET_DB_NAME'. Check permissions or if it's in use.\033[0m"
+              exit 1
+            fi
+
+            psql -U postgres -c "CREATE DATABASE \"$TARGET_DB_NAME\";"
+            if [ $? -ne 0 ]; then
+              echo -e "\033[1;31m❌ Failed to create database '$TARGET_DB_NAME'.\033[0m"
+              exit 1
+            fi
+
+            echo "Restoring data into '$TARGET_DB_NAME'..."
+            # Use psql to restore from the SQL file.
+            psql -U postgres -d "$TARGET_DB_NAME" < "$BACKUP_FILE"
+
+            if [ $? -eq 0 ]; then
+              echo -e "\033[1;32m✔ Restore successful.\033[0m"
+            else
+              echo -e "\033[1;31m❌ Restore failed.\033[0m"
+              exit 1
+            fi
+          '';
+
           dev-help-script = pkgs.writeShellScriptBin "dev-help" ''
             echo "----------------------------------------------------------------"
             echo -e "\033[1;36m LITELLM DEVELOPMENT ENVIRONMENT\033[0m"
@@ -35,6 +128,8 @@
             echo "  postgres-info   : Status and connection info"
             echo "  postgres-reset  : Factory reset the database"
             echo "  postgres-logs   : Tail database logs"
+            echo "  db-backup       : Backup PostgreSQL databases"
+            echo "  db-restore      : Restore a PostgreSQL database from a backup file"
             echo ""
             echo "Redis:"
             echo "  redis-info      : Status and connection info (not yet implemented)"
@@ -94,12 +189,22 @@
         in
         {
           default = pkgs.mkShellNoCC {
-            packages = with pkgs; [
-              google-cloud-sdk nodejs_22 nodePackages.prisma
+            packages = with pkgs; [ 
+              google-cloud-sdk
+              nodejs_22
+              nodePackages.prisma
               llxprt-script
-              poetry postgres-status-script postgres-reset-script
-              postgres-logs-script dev-help-script zsh postgresql
-              pkgs.redis pgadmin-start-script pkgs.pgadmin4-desktopmode
+              poetry postgres-status-script
+              postgres-reset-script
+              postgres-logs-script
+              dev-help-script
+              zsh
+              postgresql
+              redis
+              pgadmin-start-script
+              pgadmin4-desktopmode
+              db-backup-script
+              db-restore-script
             ];
 
             LITELLM_TARGET_VERSION = litellmVer;
@@ -213,13 +318,13 @@ $USER_RC
 export PROMPT="%F{cyan}[litellm]%f \$PROMPT"
 
 STOP_ON_EXIT=true
-exitkeep() { 
+exitkeep() {
   STOP_ON_EXIT=false
   echo -e "\033[1;32m✔ Postgres and Redis remain running.\033[0m"
   builtin exit
 }
 
-cleanup() { 
+cleanup() {
   if [ "\$STOP_ON_EXIT" = true ]; then 
     echo -e "\n\033[1;33m--- Stopping PostgreSQL server ---\033[0m"
     ${pkgs.postgresql}/bin/pg_ctl -D "\$PGDATA" stop > /dev/null 2>&1

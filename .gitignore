@@ -1,3 +1,6 @@
+pgadmin_config/__pycache__
+pgadmin_config/data
 postgresql/data/*
 .env
 .letta
+**.sql
