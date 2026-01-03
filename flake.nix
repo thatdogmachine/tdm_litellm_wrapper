@@ -28,6 +28,7 @@
             echo "  dev-help        : Show this menu"
             echo "  gemini-ap       : Run Gemini CLI"
             echo "  llxprt          : Run llxprt CLI"
+            echo "  pga             : Start pgAdmin 4 Desktop"
             echo "  exitkeep        : Exit shell but leave Postgres and Redis running"
             echo ""
             echo "PostgreSQL:"
@@ -77,6 +78,19 @@
             npx @vybestack/llxprt-code@0.7.0-nightly.251217.ed1785109 "$@"
             # 0.7.0-nightly.251217.ed1785109 fixes many scroll issues
           '';
+
+          pgadmin-start-script = pkgs.writeShellScriptBin "pga" ''
+            export PGADMIN_CONFIG_DIR="$WRAPPER_DIR/pgadmin_config"
+            mkdir -p "$PGADMIN_CONFIG_DIR/data"
+            
+            # Add config directory to PYTHONPATH so config_local.py is imported
+            export PYTHONPATH="$PGADMIN_CONFIG_DIR:$PYTHONPATH"
+            
+            echo -e "\033[1;32mStarting pgAdmin 4...\033[0m"
+            echo "Data directory: $PGADMIN_CONFIG_DIR/data"
+            
+            ${pkgs.pgadmin4-desktopmode}/bin/pgadmin4
+          '';
         in
         {
           default = pkgs.mkShellNoCC {
@@ -85,7 +99,7 @@
               llxprt-script
               poetry postgres-status-script postgres-reset-script
               postgres-logs-script dev-help-script zsh postgresql
-              pkgs.redis
+              pkgs.redis pgadmin-start-script pkgs.pgadmin4-desktopmode
             ];
 
             LITELLM_TARGET_VERSION = litellmVer;
