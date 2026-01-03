@@ -5,8 +5,8 @@ Convenience wrapper for [LiteLLM](https://docs.litellm.ai/) project, using [Nix]
 
 ## Important
 
-This deployment configuration is deliberately INSECURE to misuse from your local network (Proxy reachable with default keys)
- and local host (eg Postgres, Redis unsecured). Understand those risks before using.
+This deployment configuration is deliberately INSECURE to misuse from your local network (Proxy reachable with default keys, Postgres unsecured)
+ and local host (eg Redis unsecured). Understand those risks before using.
  In particular, ensure you understand how Authorization, not just Authentication, works for
  [passthrough](https://docs.litellm.ai/docs/pass_through/intro) endpoints.
 

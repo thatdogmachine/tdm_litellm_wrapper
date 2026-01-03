@@ -19,6 +19,7 @@
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgsFor.${system};
+          postgresql = pkgs.postgresql.withPackages (ps: [ ps.pgvector ]);
 
           db-backup-script = pkgs.writeShellScriptBin "db-backup" ''
             #!/usr/bin/env bash
@@ -154,7 +155,7 @@
 
           postgres-status-script = pkgs.writeShellScriptBin "postgres-info" ''
             echo -e "\033[1;34m=== PostgreSQL Status ===\033[0m"
-            ${pkgs.postgresql}/bin/pg_ctl -D "$PGDATA" status
+            ${postgresql}/bin/pg_ctl -D "$PGDATA" status
           '';
 
           postgres-reset-script = pkgs.writeShellScriptBin "postgres-reset" ''
@@ -162,7 +163,7 @@
             read -p "Are you sure? [y/N] " -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
-              ${pkgs.postgresql}/bin/pg_ctl -D "$PGDATA" stop -m immediate || true
+              ${postgresql}/bin/pg_ctl -D "$PGDATA" stop -m immediate || true
               rm -rf "$PGDATA"
               echo -e "\033[1;32mDatabase wiped. Re-enter shell to re-init.\033[0m"
             fi
@@ -241,13 +242,13 @@
               if [ ! -d "$PGDATA" ]; then
                 echo "--- Initializing PostgreSQL data directory ---"
                 mkdir -p "$(dirname "$PGDATA")"
-                ${pkgs.postgresql}/bin/initdb -D "$PGDATA" --auth-local=trust -U postgres --no-locale >/dev/null
+                ${postgresql}/bin/initdb -D "$PGDATA" --auth-local=trust -U postgres --no-locale >/dev/null
               fi
-              if ! ${pkgs.postgresql}/bin/pg_ctl -D "$PGDATA" status > /dev/null 2>&1; then
+              if ! ${postgresql}/bin/pg_ctl -D "$PGDATA" status > /dev/null 2>&1; then
                 echo "--- Starting PostgreSQL server ---"
-                ${pkgs.postgresql}/bin/pg_ctl -D "$PGDATA" -l "$PGDATA/postgres.log" start >/dev/null
+                ${postgresql}/bin/pg_ctl -D "$PGDATA" -l "$PGDATA/postgres.log" start >/dev/null
                 echo "--- PostgreSQL server started. ---"
-                ${pkgs.postgresql}/bin/createdb -U postgres mylitellm 2>/dev/null || true
+                ${postgresql}/bin/createdb -U postgres mylitellm 2>/dev/null || true
               else
                 echo "--- PostgreSQL server already running. ---"
               fi
@@ -327,7 +328,7 @@ exitkeep() {
 cleanup() {
   if [ "\$STOP_ON_EXIT" = true ]; then 
     echo -e "\n\033[1;33m--- Stopping PostgreSQL server ---\033[0m"
-    ${pkgs.postgresql}/bin/pg_ctl -D "\$PGDATA" stop > /dev/null 2>&1
+    ${postgresql}/bin/pg_ctl -D "$PGDATA" stop > /dev/null 2>&1
     echo "--- PostgreSQL server stopped. ---"
 
     set -e
