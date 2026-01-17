@@ -14,6 +14,8 @@ EMBED_MODEL="openai/local-bge-small-en-v1-5"
 
 echo "Using Host IP: $HOST_IP"
 
+LETTASERVER_URL="http://localhost:8283"
+
 # 2. Cleanup
 container stop $CONTAINER_NAME 2>/dev/null
 container rm $CONTAINER_NAME 2>/dev/null
@@ -38,7 +40,7 @@ container run \
 
 # 4. Wait for Health Check
 echo "Waiting for server to initialize..."
-until curl -s -L http://localhost:8283/v1/health/ | grep -q "ok"; do
+until curl -s -L ${LETTASERVER_URL}/v1/health/ | grep -q "ok"; do
     printf '.'
     sleep 2
 done
@@ -47,7 +49,7 @@ echo -e "\nServer is UP."
 # 5. Create the 'skills' block independently (Required for 0.16.x)
 echo "Initializing core memory blocks..."
 BLOCK_RESPONSE=$(curl -s -L --post301 --post302 --post303 \
-     -X POST "http://localhost:8283/v1/blocks/" \
+     -X POST "${LETTASERVER_URL}/v1/blocks/" \
      -H "Content-Type: application/json" \
      -d '{"label": "skills", "value": " ", "limit": 10000}')
 
@@ -61,7 +63,7 @@ fi
 # 6. Create Agent and link the Block ID directly
 echo "Creating Agent and linking memory..."
 AGENT_RESPONSE=$(curl -s -L --post301 --post302 --post303 \
-     -X POST "http://localhost:8283/v1/agents/" \
+     -X POST "${LETTASERVER_URL}/v1/agents/" \
      -H "Content-Type: application/json" \
      -d '{
        "name": "letta_code_clean",
@@ -89,8 +91,61 @@ if [ -z "$AGENT_ID" ]; then
     exit 1
 fi
 
+
+
+SERVER_NAME_TDMWNET="tdmwnet"
+
+echo "Checking for existing MCP server '$SERVER_NAME_TDMWNET'..."
+MCP_SERVER_ID_TDMWNET=$(curl -s "${LETTASERVER_URL}/v1/mcp-servers/" | \
+  jq -r '.[] | select(.server_name == "'"$SERVER_NAME_TDMWNET"'") | .id' 2>/dev/null)
+
+if [ -n "$MCP_SERVER_ID_TDMWNET" ]; then
+  echo "Found existing MCP server '$SERVER_NAME_TDMWNET' (ID: $MCP_SERVER_ID_TDMWNET). Deleting..."
+  DELETE_RESPONSE=$(curl -s -X DELETE "${LETTASERVER_URL}/v1/mcp-servers/$MCP_SERVER_ID_TDMWNET")
+  if echo "$DELETE_RESPONSE" | grep -q "detail"; then
+    echo "Error deleting MCP server '$SERVER_NAME_TDMWNET'. Response: $DELETE_RESPONSE"
+    # For now, let's allow it to continue and try to re-register
+  else
+    echo "Successfully deleted existing MCP server '$SERVER_NAME_TDMWNET'."
+  fi
+else
+  echo "No existing MCP server '$SERVER_NAME_TDMWNET' found. Proceeding with registration."
+fi
+
+# Register the Host-based Dart MCP server to the Containerized Letta Server
+echo
+echo "Registering Dart MCP Server..."
+# curl -s -L --post301 --post302 --post303 \
+#   -X POST "${LETTASERVER_URL}/v1/mcp-servers/" \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "server_name": "tdmwnet",
+#     "config": {
+#       "mcp_server_type": "streamable_http",
+#       "server_url": "http://'$HOST_IP':9911/mcp" 
+#     }
+#   }'
+
+curl -s -L --post301 --post302 --post303 \
+  -X POST "${LETTASERVER_URL}/v1/mcp-servers/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "server_name": "tdmw",
+    "config": {
+      "mcp_server_type": "stdio",
+      "command": "dart",
+      "args": ["run", "/Users/ewannisbet/repos/tdm_wrapper/implementation/bin/mcp_server.dart"],
+      "env": {
+          "TDMW_ADMIN_MODE": "true"
+        }
+      }
+    }'
+
+
+echo
+echo
 echo "Agent ready: $AGENT_ID"
 echo "------------------------------------------------"
 
 # 7. Execute Letta Code
-LETTA_BASE_URL="http://localhost:8283" npx @letta-ai/letta-code --agent "$AGENT_ID"
+LETTA_BASE_URL="${LETTASERVER_URL}" npx @letta-ai/letta-code --agent "$AGENT_ID"
