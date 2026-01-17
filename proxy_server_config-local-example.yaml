@@ -18,6 +18,24 @@ model_list:
       max_prompt_tokens: 260000
     model_info:
       id: "glm-4.5-air-mlx"
+  - model_name: local-glm-4-6-reap-218b-a32b-mlx
+    litellm_params:
+      model: openai/glm-4.6-reap-218b-a32b-mlx
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 260000  
+      max_prompt_tokens: 260000
+    model_info:
+      id: "glm-4-6-reap-218b-a32b-mlx"
+  - model_name: local-glm-4-6v-flash-mlx
+    litellm_params:
+      model: openai/glm-4.6v-flash-mlx
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 260000  
+      max_prompt_tokens: 260000
+    model_info:
+      id: "glm-4.6v-flash-mlx"
   - model_name: local-qwen/qwen3-coder-30b
     litellm_params:
       model: openai/qwen/qwen3-coder-30b
@@ -57,6 +75,42 @@ model_list:
   - model_name: GCP-gemma-3-27b
     litellm_params:
       model: gemini/gemma-3-27b
+      api_key: os.environ/GEMINI_API_KEY
+      context_limit: 1000000  
+      max_prompt_tokens: 1000000
+  - model_name: gemini-3-flash-preview-oauth
+    litellm_params:
+      model: gemini/gemini-3-flash-preview
+      api_base: http://localhost:8081/
+      api_key: "not-needed"
+      context_limit: 1000000
+      max_prompt_tokens: 1000000
+    model_info:
+      input_cost_per_1k_tokens: 0
+      output_cost_per_1k_tokens: 0
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      input_cost_per_character: 0
+      output_cost_per_character: 0
+      id: "gemini-3-flash-preview-oauth"
+  - model_name: gemini-3-pro-preview-oauth
+    litellm_params:
+      model: gemini/gemini-3-pro-preview
+      api_base: http://localhost:8081/
+      api_key: "not-needed"
+      context_limit: 1000000
+      max_prompt_tokens: 1000000
+    model_info:
+      input_cost_per_1k_tokens: 0
+      output_cost_per_1k_tokens: 0
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      input_cost_per_character: 0
+      output_cost_per_character: 0
+      id: "gemini-3-pro-preview-oauth"
+  - model_name: gemini-3-flash-preview
+    litellm_params:
+      model: gemini/gemini-3-flash-preview
       api_key: os.environ/GEMINI_API_KEY
       context_limit: 1000000  
       max_prompt_tokens: 1000000
