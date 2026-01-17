@@ -122,10 +122,10 @@
             echo "  dev-help        : Show this menu"
             echo "  gemini-ap       : Run Gemini CLI"
             echo "  llxprt          : Run llxprt CLI"
-            echo "  pga             : Start pgAdmin 4 Desktop"
             echo "  exitkeep        : Exit shell but leave Postgres and Redis running"
             echo ""
             echo "PostgreSQL:"
+            echo "  pga             : Start pgAdmin 4 Desktop"
             echo "  postgres-info   : Status and connection info"
             echo "  postgres-reset  : Factory reset the database"
             echo "  postgres-logs   : Tail database logs"
@@ -168,7 +168,12 @@
               echo -e "\033[1;32mDatabase wiped. Re-enter shell to re-init.\033[0m"
             fi
           '';
-
+          gemini-script = pkgs.writeShellScriptBin "gemini" ''
+            #!/bin/sh
+            # Pass all arguments to the npx command
+            npx @google/gemini-cli@0.22.2 --debug "$@"
+            #node ~/repos/llxprt-code/packages/cli 
+          '';
           llxprt-script = pkgs.writeShellScriptBin "llxprt" ''
             #!/bin/sh
             npx @vybestack/llxprt-code@0.7.0-nightly.251217.ed1785109 "$@"
@@ -194,6 +199,7 @@
               google-cloud-sdk
               nodejs_22
               nodePackages.prisma
+              gemini-script
               llxprt-script
               poetry postgres-status-script
               postgres-reset-script
