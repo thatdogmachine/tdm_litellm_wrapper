@@ -4,3 +4,4 @@ postgresql/data/*
 .env
 .letta
 **.sql
+logs
