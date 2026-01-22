@@ -36,6 +36,33 @@ model_list:
       max_prompt_tokens: 260000
     model_info:
       id: "glm-4.6v-flash-mlx"
+  - model_name: local-zai-org-glm-4.7-flash
+    litellm_params:
+      model: openai/zai-org/glm-4.7-flash
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 131000  
+      max_prompt_tokens: 131000
+    model_info:
+      id: "zai-org/glm-4.7-flash"
+  - model_name: local-glm-4.7-reap-50
+    litellm_params:
+      model: openai/glm-4.7-reap-50
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 202700  
+      max_prompt_tokens: 202700
+    model_info:
+      id: "glm-4.7-reap-50"
+  - model_name: local-qwen/qwq-32b
+    litellm_params:
+      model: openai/qwen/qwq-32b
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 131000  
+      max_prompt_tokens: 131000
+    model_info:
+      id: "qwen/qwq-32b"
   - model_name: local-qwen/qwen3-coder-30b
     litellm_params:
       model: openai/qwen/qwen3-coder-30b
@@ -54,30 +81,49 @@ model_list:
       max_prompt_tokens: 260000
     model_info:
       id: "qwen3-next-80b"
-  - model_name: local-openai/gpt-oss-20b
-    litellm_params:
-      model: openai/openai/gpt-oss-20b
-      api_key: "not-needed"
-      api_base: http://localhost:1234/v1
-      context_limit: 131000  
-      max_prompt_tokens: 131000
-    model_info:
-      id: "gpt-oss-20b"
-  - model_name: local-openai/gpt-oss-120b
-    litellm_params:
-      model: openai/openai/gpt-oss-120b
-      api_key: "not-needed"
-      api_base: http://localhost:1234/v1
-      context_limit: 131000  
-      max_prompt_tokens: 131000
-    model_info:
-      id: "gpt-oss-120b"
   - model_name: GCP-gemma-3-27b
     litellm_params:
       model: gemini/gemma-3-27b
       api_key: os.environ/GEMINI_API_KEY
       context_limit: 1000000  
       max_prompt_tokens: 1000000
+  - model_name: local-gemma-3-27b
+    litellm_params:
+      model: openai/google/gemma-3-27b
+      api_key: "not-needed"
+      api_base: http://localhost:1234/v1
+      context_limit: 131000  
+      max_prompt_tokens: 131000
+  - model_name: gemini-2-5-flash-oauth
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_base: http://localhost:8081/
+      api_key: "not-needed"
+      context_limit: 1000000
+      max_prompt_tokens: 1000000
+    model_info:
+      input_cost_per_1k_tokens: 0
+      output_cost_per_1k_tokens: 0
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      input_cost_per_character: 0
+      output_cost_per_character: 0
+      id: "gemini-2.5-flash-oauth"
+  - model_name: gemini-2-5-flash-lite-oauth
+    litellm_params:
+      model: gemini/gemini-2.5-flash-lite
+      api_base: http://localhost:8081/
+      api_key: "not-needed"
+      context_limit: 1000000
+      max_prompt_tokens: 1000000
+    model_info:
+      input_cost_per_1k_tokens: 0
+      output_cost_per_1k_tokens: 0
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      input_cost_per_character: 0
+      output_cost_per_character: 0
+      id: "gemini-2.5-flash-lite-oauth"
   - model_name: gemini-3-flash-preview-oauth
     litellm_params:
       model: gemini/gemini-3-flash-preview

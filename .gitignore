@@ -3,5 +3,6 @@ pgadmin_config/data
 postgresql/data/*
 .env
 .letta
+.gemini
 **.sql
 logs
