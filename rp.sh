@@ -10,6 +10,7 @@ source ./.env
 # align with:
 # https://github.com/BerriAI/litellm/blob/main/CONTRIBUTING.md?plain=1#L228
 cd $LITELLM_DIR && \
+    poetry cache clear --all . && \
     EXPERIMENTAL_MULTI_INSTANCE_RATE_LIMITING="True" poetry run litellm \
         --config "$WRAPPER_DIR/proxy_server_config-local-example.yaml" \
         --host 0.0.0.0
