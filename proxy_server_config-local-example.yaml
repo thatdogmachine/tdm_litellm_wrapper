@@ -27,24 +27,32 @@ model_list:
       max_prompt_tokens: 260000
     model_info:
       id: "glm-4-6-reap-218b-a32b-mlx"
-  - model_name: local-glm-4-6v-flash-mlx
-    litellm_params:
-      model: openai/glm-4.6v-flash-mlx
-      api_key: "not-needed"
-      api_base: http://localhost:1234/v1
-      context_limit: 260000  
-      max_prompt_tokens: 260000
-    model_info:
-      id: "glm-4.6v-flash-mlx"
   - model_name: local-zai-org-glm-4.7-flash
     litellm_params:
-      model: openai/zai-org/glm-4.7-flash
+      model: zai/zai-org/glm-4.7-flash
+      api_base: http://localhost:1234/v1 
       api_key: "not-needed"
-      api_base: http://localhost:1234/v1
-      context_limit: 131000  
-      max_prompt_tokens: 131000
-    model_info:
-      id: "zai-org/glm-4.7-flash"
+      custom_llm_provider: "zai"
+      stream: true
+      stream_timeout: 1200
+      timeout: 1200
+      tool_call_parser: "glm47"
+      drop_params: true
+      metadata:
+        supports_function_calling: true
+  - model_name: local-zai-org-glm-4-6-flash
+    litellm_params:
+      model: zai/zai-org/glm-4.6v-flash
+      api_base: http://localhost:1234/v1 
+      api_key: "not-needed"
+      custom_llm_provider: "zai"
+      stream: true
+      stream_timeout: 1200
+      timeout: 1200
+      tool_call_parser: "glm46"
+      drop_params: true
+      metadata:
+        supports_function_calling: true
   - model_name: local-glm-4.7-reap-50
     litellm_params:
       model: openai/glm-4.7-reap-50
@@ -166,6 +174,14 @@ model_list:
       api_key: os.environ/GEMINI_API_KEY
       context_limit: 1000000  
       max_prompt_tokens: 1000000
+  - model_name: gemini-2.5-flash-lite # lets gemini-cli access with appropriate key
+    litellm_params:
+      model: gemini/gemini-2.5-flash-lite
+      api_key: os.environ/GEMINI_API_KEY
+      context_limit: 1000000
+      max_prompt_tokens: 1000000
+    model_info:
+      id: "gemini-2.5-flash-lite"
   - model_name: gemini-2.5-pro
     litellm_params:
       model: gemini/gemini-2.5-pro
@@ -227,7 +243,7 @@ litellm_settings:
     # NOTE: redis_semantic_cache_embedding_model doesn't seem used, but is needed to start the cache
     ttl: 300 # Extend cache lifetime to 5 minutes
     # NOTE: if using agents, this may not be hit regardless
-    skip_system_message_in_cache_key: True # More consistent cache keys
+    # skip_system_message_in_cache_key: True # broke when bumping to v1.81.0.rc.5 # More consistent cache keys
   
 general_settings:
   ui_features:
