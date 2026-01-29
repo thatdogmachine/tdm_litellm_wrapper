@@ -12,7 +12,7 @@
       forAllSystems = lib.genAttrs supportedSystems;
       nixpkgsFor = forAllSystems (system: nixpkgs.legacyPackages.${system});
 
-      litellmVer = "v1.80.10.rc.2";
+      litellmVer = "v1.81.0.rc.5";
       litellmRelPath = "../litellm";
     in
     {
