@@ -54,7 +54,7 @@ fi
 
 # Determine LITELLM_DIR
 if [ -z "$LITELLM_DIR" ]; then
-    LITELLM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    LITELLM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../litellm" && pwd)"
 fi
 
 # Determine WRAPPER_DIR
@@ -73,12 +73,16 @@ if [ "$CLEAR_CACHE" = true ]; then
     find "$LITELLM_DIR" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
     find "$LITELLM_DIR" -name "*.pyc" -delete 2>/dev/null || true
     find "$LITELLM_DIR" -name "*.pyo" -delete 2>/dev/null || true
-    
-    pip install -e "$LITELLM_DIR" > /dev/null 2>&1
-    
-    echo "Python cache cleared and repo re-linked."
-    echo ""
+    echo "Python cache cleared"
 fi
+
+cd $LITELLM_DIR
+pwd
+python3 -m venv $LITELLM_DIR/.venv
+source $LITELLM_DIR/.venv/bin/activate
+pip3 install -e "$LITELLM_DIR" # > /dev/null 2>&1
+    echo "repo re-linked."
+    echo ""
 
 python3 -c "import litellm.main; print(litellm.main.__file__)"  
 
@@ -95,4 +99,6 @@ else
     EXPERIMENTAL_MULTI_INSTANCE_RATE_LIMITING="True" python litellm/proxy/proxy_cli.py \
         --config "$WRAPPER_DIR/proxy_server_config-local-example.yaml" \
         --host 0.0.0.0
+    # python3 repro_bug.py
+    # python3 test_model_extraction.py
 fi
